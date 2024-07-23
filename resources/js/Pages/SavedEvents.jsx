@@ -1,10 +1,12 @@
-// resources/js/Pages/SavedEvents.jsx
 import { Link, Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function SavedEvents({ events, filters }) {
     const [currentPage, setCurrentPage] = useState(events.current_page);
     const [selectedDate, setSelectedDate] = useState(filters.date || '');
+    const [selectedLanguage, setSelectedLanguage] = useState(filters.language);
+    const [selectedSource, setSelectedSource] = useState(filters.source);
+
     const [orderBy, setOrderBy] = useState(filters.orderBy || 'desc');
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
@@ -48,21 +50,35 @@ export default function SavedEvents({ events, filters }) {
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
-        window.location.href = `/saved-events?page=${page}&date=${selectedDate}&orderBy=${orderBy}`; // Redirect to the correct page
+        window.location.href = `/saved-events?page=${page}&date=${selectedDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${selectedSource}`;
+    };
+
+    const handleLanguageChange = (event) => {
+        const newLanguage = event.target.value;
+        setSelectedLanguage(newLanguage);
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/saved-events?page=1&date=${selectedDate}&orderBy=${orderBy}&language=${newLanguage}&source=${selectedSource}`;
+    };
+
+    const handleSourceChange = (event) => {
+        const newSource = event.target.value;
+        setSelectedSource(newSource);
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/saved-events?page=1&date=${selectedDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${newSource}`;
     };
 
     const handleFilterChange = (event) => {
         const newDate = event.target.value;
         setSelectedDate(newDate);
         setCurrentPage(1); // Reset to the first page
-        window.location.href = `/saved-events?page=1&date=${newDate}&orderBy=${orderBy}`; // Redirect with updated filter
+        window.location.href = `/saved-events?page=1&date=${newDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${selectedSource}`;
     };
 
     const handleOrderChange = (event) => {
         const newOrder = event.target.value;
         setOrderBy(newOrder);
         setCurrentPage(1); // Reset to the first page
-        window.location.href = `/saved-events?page=1&date=${selectedDate}&orderBy=${newOrder}`; // Redirect with updated order
+        window.location.href = `/saved-events?page=1&date=${selectedDate}&orderBy=${newOrder}&language=${selectedLanguage}&source=${selectedSource}`;
     };
 
     const handleDelete = async (id) => {
@@ -123,6 +139,32 @@ export default function SavedEvents({ events, filters }) {
                                 <option value="asc">Oldest</option>
                             </select>
                         </div>
+                        <div className="flex-1">
+                            <label htmlFor="language-filter" className="block text-gray-700">Filter by Language:</label>
+                            <select
+                                id="language-filter"
+                                value={selectedLanguage}
+                                onChange={handleLanguageChange}
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                            >
+                                <option value="English">English</option>
+                                <option value="Spanish">Spanish</option>
+                                {/* Add more languages as needed */}
+                            </select>
+                        </div>
+                        <div className="flex-1">
+                            <label htmlFor="source-filter" className="block text-gray-700">Filter by Source:</label>
+                            <select
+                                id="source-filter"
+                                value={selectedSource}
+                                onChange={handleSourceChange}
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                            >
+                                <option value="The Guardian">The Guardian</option>
+                                <option value="BBC">BBC</option>
+                                {/* Add more sources as needed */}
+                            </select>
+                        </div>
                     </div>
                     <div className="space-y-4 flex flex-wrap gap-2">
                         {events.data.map(event => (
@@ -131,6 +173,8 @@ export default function SavedEvents({ events, filters }) {
                                 <p className="text-gray-600">{new Date(event.publicationDate).toLocaleString()}</p>
                                 <img src={event.thumbnailUrl} alt="Event Thumbnail" className="max-w-full h-auto mt-auto" />
                                 <div dangerouslySetInnerHTML={{ __html: truncateHTML(event.body, 30) }}></div>
+                                <p className="text-gray-600">{event.source}</p>
+                                <p className="text-gray-600">{event.language}</p>
                                 <button
                                     onClick={() => handleDelete(event.id)}
                                     className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"

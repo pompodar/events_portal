@@ -141,6 +141,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         .flat()
                         .pop(),
                     publicationDate: event.webPublicationDate,
+                    language: 'English',
+                    source: 'The Guardian'
                 }),                
             });
 

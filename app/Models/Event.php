@@ -15,5 +15,7 @@ class Event extends Model
         'body',
         'thumbnailUrl',
         'publicationDate',
+        'language', 
+        'source'
     ];
 }

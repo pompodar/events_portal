@@ -5,31 +5,43 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Event;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class EventController extends Controller
 {
     public function savedEvents(Request $request)
     {
-        // Retrieve filter and sorting parameters
-        $dateFilter = $request->input('date', '');
-        $orderBy = $request->input('orderBy', 'desc'); // Default to latest posts
-
-        // Build the query
         $query = Event::query();
 
-        if ($dateFilter) {
-            $query->whereDate('publicationDate', $dateFilter);
+        if ($request->has('date') && $request->date) {
+            $date = Carbon::parse($request->date);
+            $query->whereDate('publicationDate', '=', $date->toDateString());
         }
 
-        $events = $query->orderBy('publicationDate', $orderBy)
-                        ->paginate(10, ['*'], 'page', $request->input('page', 1));
+        if ($request->has('orderBy')) {
+            $query->orderBy('publicationDate', $request->orderBy);
+        } else {
+            $query->orderBy('publicationDate', 'desc');
+        }
 
-        return Inertia::render('SavedEvents', [
+        if ($request->has('language')) {
+            $query->where('language', $request->language);
+        }
+
+        if ($request->has('source')) {
+            $query->where('source', $request->source);
+        }
+
+        $events = $query->paginate(10);
+
+        return inertia('SavedEvents', [
             'events' => $events,
             'filters' => [
-                'date' => $dateFilter,
-                'orderBy' => $orderBy,
-            ],
+                'date' => $request->query('date'),
+                'orderBy' => $request->query('orderBy', 'desc'),
+                'language' => $request->query('language'),
+                'source' => $request->query('source')
+            ]
         ]);
     }
 
@@ -41,6 +53,8 @@ class EventController extends Controller
             'body' => 'required',
             'thumbnailUrl' => 'nullable|url',
             'publicationDate' => 'required|date',
+            'language' => 'sometimes|string',
+            'source' => 'sometimes|string',
         ]);
 
         Event::create($data);
