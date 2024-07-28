@@ -1,42 +1,49 @@
-import OnSaveEventsModal from '@/Components/OnSaveEventsModal';
 import { Link, Head } from '@inertiajs/react';
+import GuestLayout from '@/Layouts/GuestLayout';
 import { useState, useEffect } from 'react';
 
-export default function Welcome({ auth, laravelVersion, phpVersion }) {
-    const [page, setPage] = useState(() => {
-        // Retrieve the stored page from localStorage or default to 1
-        return parseInt(localStorage.getItem('currentPage'), 10) || 1;
-    });
-    const [totalPages, setTotalPages] = useState(1);
-    const [events, setEvents] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(() => {
-        // Retrieve the stored date from localStorage or default to a specific date
-        return localStorage.getItem('selectedDate') || '2022-02-24';
-    });
-        const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMessage, setModalMessage] = useState('');
+export default function SavedEvents({ auth, events, filters }) {
+    const [currentPage, setCurrentPage] = useState(events.current_page);
+    const [selectedDate, setSelectedDate] = useState(filters.date || '');
+    const [selectedLanguage, setSelectedLanguage] = useState(filters.language);
+    const [selectedSource, setSelectedSource] = useState(filters.source);
+
+    const [orderBy, setOrderBy] = useState(filters.orderBy || 'desc');
 
     useEffect(() => {
-        const fetchEvents = async (pageNumber, date) => {
-            const url = `https://content.guardianapis.com/search?page=${pageNumber}&section=world&from-date=${date}&to-date=${date}&api-key=6aba409a-f2d8-4e21-a716-fdb87db776ef&show-elements=all&show-fields=all`;
-            const options = {
-                method: 'GET',
-            };
+        // const fetchData = async () => {
+        //     const url = `https://api.nytimes.com/svc/archive/v1/2018/1.json?api-key=EXdL0PlulrdxFC5DW2NsVUCTF7SIjSzx`;
+        //     const options = {
+        //         method: 'GET',
+        //     };
 
-            try {
-                const response = await fetch(url, options);
-                const result = await response.json();
-                setEvents(result.response.results);
-                setTotalPages(result.response.pages);
+        //     try {
+        //         const response = await fetch(url, options);
+        //         const result = await response.json();
 
-                console.log(result.response.results);
-            } catch (error) {
-                console.error(error);
-            }
-        };
+        //         console.log(result);
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // };
 
-        fetchEvents(page, selectedDate);
-    }, [page, selectedDate]);
+         const apiKey = "EXdL0PlulrdxFC5DW2NsVUCTF7SIjSzx";
+    //     fetch(`https://api.nytimes.com/svc/topstories/v2/home.json?api-key=${apiKey}`)
+    //   .then(res => res.json()).then(data => {
+    //     console.log(data);
+    //   });
+
+    //   fetch(`https://api.nytimes.com/svc/search/v2/articlesearch.json?q=ukraine&page=1&sort=newest&api-key=${apiKey}`)
+    //   .then(res => res.json()).then(data => {
+    //     console.log(data);
+    //   });
+
+    // fetch(`https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=ukraine&facet_field=day_of_week&facet=true&begin_date=20220224&end_date=20220224&api-key=${apiKey}`)
+    //   .then(res => res.json()).then(data => {
+    //     console.log(data);
+    //   });
+
+    }, []);
 
     function truncateHTML(html, limit) {
         let doc = new DOMParser().parseFromString(html, 'text/html');
@@ -72,184 +79,123 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         Array.from(doc.body.childNodes).forEach(child => truncateNode(child));
     
         return truncatedContent.trim();
-    }    
+    }
 
-    const handleNextPage = () => {
-        if (page < totalPages) {
-            const newPage = page + 1;
-            setPage(newPage);
-            localStorage.setItem('currentPage', newPage); // Store the current page in localStorage
-
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
-        }
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.location.href = `/?page=${page}&date=${selectedDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${selectedSource}`;
     };
 
-    const handlePreviousPage = () => {
-        if (page > 1) {
-            const newPage = page - 1;
-            setPage(newPage);
-            localStorage.setItem('currentPage', newPage); // Store the current page in localStorage
-
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
-        }
+    const handleLanguageChange = (event) => {
+        const newLanguage = event.target.value;
+        setSelectedLanguage(newLanguage);
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/?page=1&date=${selectedDate}&orderBy=${orderBy}&language=${newLanguage}&source=${selectedSource}`;
     };
 
-    const handleNextDay = () => {
-        const newDate = new Date(selectedDate);
-        newDate.setDate(newDate.getDate() + 1);
-        const formattedDate = newDate.toISOString().split('T')[0];
-        setSelectedDate(formattedDate);
-        localStorage.setItem('selectedDate', formattedDate); // Store the date in localStorage
-        setPage(1); // Reset to the first page whenever the date changes
-        localStorage.setItem('currentPage', 1); // Store the reset page number in localStorage
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
+    const handleSourceChange = (event) => {
+        const newSource = event.target.value;
+        setSelectedSource(newSource);
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/?page=1&date=${selectedDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${newSource}`;
     };
 
-    const handlePreviousDay = () => {
-        const newDate = new Date(selectedDate);
-        newDate.setDate(newDate.getDate() - 1);
-        const formattedDate = newDate.toISOString().split('T')[0];
-        setSelectedDate(formattedDate);
-        localStorage.setItem('selectedDate', formattedDate); // Store the date in localStorage
-        setPage(1); // Reset to the first page whenever the date changes
-        localStorage.setItem('currentPage', 1); // Store the reset page number in localStorage
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
-    };
-
-    const handleDateChange = (event) => {
+    const handleFilterChange = (event) => {
         const newDate = event.target.value;
         setSelectedDate(newDate);
-        localStorage.setItem('selectedDate', newDate); // Store the date in localStorage
-        setPage(1); // Reset to the first page whenever the date changes
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/?page=1&date=${newDate}&orderBy=${orderBy}&language=${selectedLanguage}&source=${selectedSource}`;
     };
 
-    const saveEvent = async (event) => {
-        try {
-            const response = await fetch('/events/save', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                },
-                body: JSON.stringify({
-                    title: event.webTitle,
-                    url: event.webUrl,
-                    body: event.fields.body,
-                    thumbnailUrl: event.elements
-                        .filter((element) => element.relation === "thumbnail")
-                        .map((element) => element.assets.map((asset) => asset.file))
-                        .flat()
-                        .pop(),
-                    publicationDate: event.webPublicationDate,
-                    language: 'English',
-                    source: 'The Guardian'
-                }),                
-            });
-
-            const data = await response.json();
-            setModalMessage(data.message);
-            setIsModalOpen(true);
-
-            setTimeout(() => {
-                setIsModalOpen(false);
-            }, 2000);
-
-        } catch (error) {
-            setModalMessage(data.message);
-            setIsModalOpen("Error saving event..");
-
-            setTimeout(() => {
-                setIsModalOpen(false);
-            }, 2000);
-            console.error('Error saving event:', error);
-        }
+    const handleOrderChange = (event) => {
+        const newOrder = event.target.value;
+        setOrderBy(newOrder);
+        setCurrentPage(1); // Reset to the first page
+        window.location.href = `/?page=1&date=${selectedDate}&orderBy=${newOrder}&language=${selectedLanguage}&source=${selectedSource}`;
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4">
-            <Head title="Welcome" />
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="bg-white shadow sm:rounded-lg p-6">
-                    <div className="mt-6">
-                        <Link href={route('events.saved')} className="text-indigo-600 hover:text-indigo-900">View Saved Events</Link>
-                    </div>
-                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">Events</h2>
-                    <div className="mt-6 flex justify-between items-center">
-                        <button 
-                            onClick={handlePreviousPage} 
-                            disabled={page === 1}
-                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Previous
-                        </button>
-                        <span className="text-gray-700">Page {page} of {totalPages}</span>
-                        <button 
-                            onClick={handleNextPage} 
-                            disabled={page === totalPages}
-                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Next
-                        </button>
-                    </div>
-                    <div>
-                        <div className="mb-4">
-                            <label htmlFor="date-picker" className="block text-gray-700">Select Date:</label>
-                            <input
-                                type="date"
-                                id="date-picker"
-                                value={selectedDate}
-                                onChange={handleDateChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
-                            />
-                            <button
-                                onClick={handlePreviousDay}
-                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                            >
-                                Previous Day
-                            </button>
-                            <button
-                                onClick={handleNextDay}
-                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                            >
-                                Next Day
-                            </button>
+        <GuestLayout>
+            <Head title="Russia-Ukraine War" />
+            <div className="min-h-screen bg-gray-100 p-4">
+                <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                    <div className="bg-white shadow sm:rounded-lg p-6">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-4">Events</h1>
+                        <div className="flex flex-col justify-center sm:flex-row items-center mb-4 space-y-4 sm:space-y-0 sm:space-x-4">
+                            <div className="flex-1">
+                                <label htmlFor="date-picker" className="block text-gray-700">Filter by Date:</label>
+                                <input
+                                    type="date"
+                                    id="date-picker"
+                                    value={selectedDate}
+                                    onChange={handleFilterChange}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="order-by" className="block text-gray-700">Order By:</label>
+                                <select
+                                    id="order-by"
+                                    value={orderBy}
+                                    onChange={handleOrderChange}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                                >
+                                    <option value="desc">Latest</option>
+                                    <option value="asc">Oldest</option>
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="language-filter" className="block text-gray-700">Filter by Language:</label>
+                                <select
+                                    id="language-filter"
+                                    value={selectedLanguage}
+                                    onChange={handleLanguageChange}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                                >
+                                    <option value="English">English</option>
+                                    <option value="Ukrainian">Ukrainian</option>
+                                    <option value="Russian">Russian</option>
+                                    <option value="null">All</option>
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="source-filter" className="block text-gray-700">Filter by Source:</label>
+                                <select
+                                    id="source-filter"
+                                    value={selectedSource}
+                                    onChange={handleSourceChange}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded shadow-sm"
+                                >
+                                    <option value="The Guardian">The Guardian</option>
+                                    <option value="The New York Times">The New York Times</option>
+                                    <option value="null">All</option>
+                                    {/* Add more sources as needed */}
+                                </select>
+                            </div>
                         </div>
-                        <div className="space-y-4 flex flex-wrap gap-2">
-                            {events.map(event => (
-                                <div key={event.id} className="bg-gray-50 p-4 rounded shadow w-[280px] flex flex-col">
-                                    <h3 className="text-xl font-semibold text-gray-900">{event.webTitle}</h3>
-                                    <p className="text-gray-600 mb-2">{new Date(event.webPublicationDate).toLocaleString()}</p>
-                                    {event.elements && event.elements.filter((element) => element.relation === "thumbnail").map((element, index) => (
-                                        <div className="mt-auto" key={index}>
-                                            {element.assets && element.assets.map((asset, index) => (
-                                                <img key={index} src={asset.file} alt={asset.type} className="max-w-full h-auto" />
-                                            ))}
-                                        </div>
-                                    ))
-                                    }
-                                    <div dangerouslySetInnerHTML={{ __html: truncateHTML(event.fields.body, 30) }}></div>
-                                    <a href={event.webUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 mt-auto hover:text-indigo-900">Read more</a>
-                                    <button
-                                        onClick={() => saveEvent(event)}
-                                        className="bg-blue-500 w-full text-white px-4 py-2 rounded hover:bg-blue-700"
-                                    >
-                                        Save Event
-                                    </button>
-                                </div>
+                        <div className="space-y-4 flex flex-wrap justify-center items-center gap-2">
+                            {events.data.map(event => (
+                                <a href={"/event/" + event.id} key={event.id} className="bg-gray-50 p-4 rounded shadow w-[280px] h-full flex flex-col">
+                                    <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
+                                    <p className="text-gray-600">{new Date(event.publicationDate).toLocaleString()}</p>
+                                    <img src={event.thumbnailUrl} alt="Event Thumbnail" className="max-w-full h-auto mt-auto" />
+                                    <div dangerouslySetInnerHTML={{ __html: truncateHTML(event.body, 30) }}></div>
+                                    <p className="text-gray-600">{event.source}</p>
+                                </a>
                             ))}
                         </div>
                         <div className="mt-6 flex justify-between items-center">
-                            <button 
-                                onClick={handlePreviousPage} 
-                                disabled={page === 1}
+                            <button
+                                onClick={() => handlePageChange(events.prev_page_url ? events.current_page - 1 : events.current_page)}
+                                disabled={!events.prev_page_url}
                                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
-                            <span className="text-gray-700">Page {page} of {totalPages}</span>
-                            <button 
-                                onClick={handleNextPage} 
-                                disabled={page === totalPages}
+                            <span className="text-gray-700">Page {events.current_page} of {events.last_page}</span>
+                            <button
+                                onClick={() => handlePageChange(events.next_page_url ? events.current_page + 1 : events.current_page)}
+                                disabled={!events.next_page_url}
                                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
@@ -258,7 +204,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </div>
                 </div>
             </div>
-            <OnSaveEventsModal isOpen={isModalOpen} message={modalMessage} />
-        </div>
+        </GuestLayout>
     );
 }
